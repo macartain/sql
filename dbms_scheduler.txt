@@ -1,0 +1,186 @@
+Job scheduling from Oracle 10g with dbms_scheduler
+-------------------------------------------------------------------------------
+Packages
+dbms_lob
+dbms_output
+How to use utl_http
+Transform query to XML
+Scheduling in 10g
+dbms_profiler explained
+
+	
+Job scheduling from Oracle 10g with dbms_scheduler
+-------------------------------------------------------------------------------
+In Oracle 10g the DBMS_JOB package is replaced by the DBMS_SCHEDULER package. The DBMS_JOB package is now depricated and in Oracle 10g it's only provided for backward compatibility. From Oracle 10g the DBMS_JOB package should not be used any more, because is could not exist in a future version of Oracle.
+
+With DBMS_SCHEDULER Oracle procedures and functions can be executed. Also binary and shell-scripts can be scheduled.
+
+Rights
+-------------------------------------------------------------------------------
+If you have DBA rights you can do all the scheduling. For administering job scheduling you need the priviliges belonging to the SCHEDULER_ADMIN role. To create and run jobs in your own schedule you need the 'CREATE JOB' privilege.
+
+With DBMS_JOB you needed to set an initialization parameter to start a job coordinator background process. With Oracle 10g DBMS_SCHEDULER this is not needed any more.
+
+If you want to user resource plans and/or consumer groups you need to set a system parameter:
+ALTER SYSTEM SET RESOURCE_LIMIT = TRUE;
+
+Getting started quickly
+To quickly get a job running, you can use code like this:
+
+begin
+  dbms_scheduler.create_job(
+      job_name => 'DEMO_JOB_SCHEDULE'
+     ,job_type => 'PLSQL_BLOCK'
+     ,job_action => 'begin package.procedure(''param_value''); end; '
+     ,start_date => '01/01/2006 02:00 AM'
+     ,repeat_interval => 'FREQ=DAILY'
+     ,enabled => TRUE
+     ,comments => 'Demo for job schedule.');
+end;
+/
+
+This schedules a pl/sql block to be executed daily starting 1/1/2006 02:00 AM.
+You can schedule things like this, but DBMS_SCHEDULER can reuse components.
+
+You can build a schedule using components like program, schedule, job, job class and window. We will now discuss these components in detail.
+
+Program
+-------------------------------------------------------------------------------
+The program component represents program-code that can be executed. This program code can have parameters. Code example
+
+begin
+   dbms_scheduler.create_program (
+       program_name => 'DEMO_JOB_SCHEDULE'
+      ,program_type => 'STORED_PROCEDURE'
+      ,program_action => 'package.procedure'
+      ,number_of_arguments => 1
+      ,enabled => FALSE
+      ,comments => 'Demo for job schedule.');
+      
+   dbms_scheduler.define_program_argument (
+       program_name => 'DEMO_JOB_SCHEDULE'
+      ,argument_position => 1
+      ,argument_name => 'kol1'
+      ,argument_type => 'VARCHAR2'
+      ,default_value => 'default'
+    );
+    dbms_scheduler.enable(name => 'DEMO_JOB_SCHEDULE');
+end;
+/
+
+The parameter program_type can have one of the following values: 'PLSQL_BLOCK', 'STORED_PROCEDURE','EXECUTABLE'.
+dbms_scheduler also allows to execute shell scripts (Windows: *.bat files) and executables.
+
+Schedule
+-------------------------------------------------------------------------------
+A schedule defines the frequence and date/time specifics of the start-time for the job.
+example code
+
+begin
+  dbms_scheduler.create_schedule(  
+      schedule_name => 'DEMO_SCHEDULE'
+    , start_date =>  '01/01/2006 22:00:00'
+    , repeat_interval => 'FREQ=WEEKLY'
+    , comments => 'Weekly at 22:00');
+END;
+/
+
+To drop the schedule:
+begin
+  dbms_scheduler.drop_schedule(
+     schedule_name => 'DEMO_SCHEDULE'
+     , force => TRUE );
+end;
+/
+
+Calendar expresions can have one of these values: 'Yearly','Monthly','Weekly','Daily','Hourly','Minutely','Secondely'
+
+Job
+-------------------------------------------------------------------------------
+A job defines when a specific task will be started. This can be done by assigning a program to one or more schedules (or to a specific date/time). A job can belong to only 1 job class. Code example
+
+begin
+  dbms_scheduler.create_job(
+       job_name => 'DEMO_JOB1'
+     , program_name =>'DEMO_JOB_SCHEDULE'
+     , schedule_name =>'DEMO_SCHEDULE'
+     , enabled => FALSE
+     , comments => 'Run demo program every week at 22:00');
+
+   dbms_scheduler.set_job_argument_value(
+        job_name => 'DEMO_JOB1'
+      , argument_position => 1
+      , argument_value => 'param1');
+
+   dbms_scheduler.enable('DEMO_JOB1');
+
+   commit;    
+end;
+/
+
+
+Or start shell script
+
+begin
+   dbms_scheduler.create_job
+   (
+      job_name      => 'RUN_SHELL1',
+      schedule_name => 'DEMO_SCHEDULE',
+      job_type      => 'EXECUTABLE',
+      job_action    => '/home/test/run_script.sh',
+      enabled       => true,
+      comments      => 'Run shell-script'
+   );
+end;
+/
+
+Monitoring job-scheduling
+-------------------------------------------------------------------------------
+Jobs can be monitored using Oracle Enterprise Manager 10g. It's also possible to use a number of views that have been created in Oracle 10g. We will discuss some of these views here.
+
+To show details on job run:
+select log_date
+,      job_name
+,      status
+,      req_start_date
+,      actual_start_date
+,      run_duration
+from   dba_scheduler_job_run_details
+  
+To show running jobs:
+select job_name
+,      session_id
+,      running_instance
+,      elapsed_time
+,      cpu_used
+from dba_scheduler_running_jobs;
+  
+To show job history:
+ select log_date
+ ,      job_name
+ ,      status
+ from dba_scheduler_job_log;
+
+
+show all schedules:
+select schedule_name, schedule_type, start_date, repeat_interval 
+from dba_scheduler_schedules;
+
+show all jobs and their attributes:
+select *
+from dba_scheduler_jobs
+
+select OWNER, JOB_NAME, PROGRAM_OWNER, PROGRAM_NAME, JOB_TYPE, JOB_ACTION, SCHEDULE_NAME, START_DATE, REPEAT_INTERVAL, ENABLED, STATE, NEXT_RUN_DATE
+from dba_scheduler_jobs
+
+
+show all program-objects and their attributes
+select *
+from dba_scheduler_programs;
+
+show all program-arguments:
+select *
+from   dba_scheduler_program_args;
+
+
+	

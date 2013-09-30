@@ -1,0 +1,16 @@
+#!/usr/bin/ksh
+
+#user vodacom 4wTMoy
+
+print Tarring up up SQL
+rm homedirsql.tgz
+tar cvf - * | gzip -c >homedirsql.tgz
+
+print FTPing
+ftp -n ftp.emea.convergys.com <<EOT
+user btraurora cN0lJz
+cd cam
+bin
+put homedirsql.tgz
+quit
+EOT

@@ -1,0 +1,81 @@
+
+Hello all,
+
+I have been trying to understand the behaviour of a long-running query that hit a Snapshot Too Old error. This is the classic situation of something that has been running in a predictable time suddenly taking much longer and then failing. As part of the investigation, I have been exploring DBA_HIST_SQLSTAT, mostly to see if the execution plan has changed. Although it hadn't, I realised this view could be a mine of useful information - if I knew how to correctly interpret it. I was hoping some list members could answer a few questions...
+
+This is the query I used (mostly nicked from a couple of differnet blogs):
+
+select s.snap_id, to_char(min(s.end_interval_time),'DYDDMONYY HH24:MI') sample_end
+, q.sql_id
+, q.plan_hash_value phv
+, sum(q.EXECUTIONS_DELTA) exe
+, round(sum(END_OF_FETCH_COUNT_DELTA)/greatest(sum(executions_delta),1),1) eftch
+, round(sum(ROWS_PROCESSED_DELTA)/greatest(sum(executions_delta),1),1) rows_per_exec
+, round(sum(DISK_READS_delta)/greatest(sum(executions_delta),1),1) pio_per_exec
+, round(sum(BUFFER_GETS_delta)/greatest(sum(executions_delta),1),1) lio_per_exec
+, round((sum(IOWAIT_DELTA)/greatest(sum(executions_delta),1)/1000),1) iowait_per_exec
+, round((sum(ELAPSED_TIME_delta)/greatest(sum(executions_delta),1)/1000),1) msec_exec
+from dba_hist_sqlstat q, dba_hist_snapshot s
+where q.SQL_ID=trim('&sqlid.')
+and s.snap_id = q.snap_id
+and s.dbid = q.dbid
+and s.instance_number = q.instance_number
+group by s.snap_id
+, q.sql_id
+, q.module
+, q.plan_hash_value
+order by s.snap_id, q.sql_id, q.plan_hash_value
+/
+
+And here is the result for my sql_id of interest:
+
+ SNAP_ID SAMPLE_END            SQL_ID               PHV   EXE EFTCH  ROWS_PER_EXEC   PIO_PER_EXEC   LIO_PER_EXEC IOWAIT_PER_EXEC      MSEC_EXEC
+-------- --------------------- ------------- ---------- ----- ----- -------------- -------------- -------------- --------------- --------------
+   62328 SUN01APR12 04:00      9pmt4mjdd45kf  889321964     0     0    1,475,000.0       48,116.0       48,580.0       267,432.7      307,805.4
+   62329 SUN01APR12 04:30      9pmt4mjdd45kf  889321964     0     0    1,450,000.0       46,720.0       47,226.0       277,727.7      319,041.4
+   62330 SUN01APR12 05:00      9pmt4mjdd45kf  889321964     0     0    1,390,000.0       44,893.0       45,290.0       297,647.4      337,196.3
+   62331 SUN01APR12 05:30      9pmt4mjdd45kf  889321964     0     0    1,375,000.0       44,849.0       45,276.0       343,953.6      384,001.1
+   62332 SUN01APR12 06:00      9pmt4mjdd45kf  889321964     0     0    1,370,000.0       44,903.0       45,368.0       342,402.8      383,348.1
+   62333 SUN01APR12 06:30      9pmt4mjdd45kf  889321964     0     0    1,335,000.0       43,981.0       44,447.0       358,382.3      399,360.1
+   62334 SUN01APR12 07:00      9pmt4mjdd45kf  889321964     0     0    1,405,000.0       45,728.0       46,265.0       317,279.0      357,863.0
+   62335 SUN01APR12 07:30      9pmt4mjdd45kf  889321964     0     0    1,355,000.0       45,145.0       45,617.0       314,139.4      352,422.6
+   62336 SUN01APR12 08:00      9pmt4mjdd45kf  889321964     0     0    1,410,000.0       47,478.0       47,947.0       310,205.3      350,337.1
+   62337 SUN01APR12 08:30      9pmt4mjdd45kf  889321964     0     0    1,435,000.0       47,465.0       47,973.0       295,935.7      337,351.7
+   62338 SUN01APR12 09:00      9pmt4mjdd45kf  889321964     0     0    1,455,000.0       47,802.0       48,278.0       290,276.8      332,668.9
+   62339 SUN01APR12 09:30      9pmt4mjdd45kf  889321964     0     0    1,450,000.0       47,888.0       48,300.0       285,585.2      327,919.1
+   62340 SUN01APR12 10:00      9pmt4mjdd45kf  889321964     0     0    1,450,000.0       47,770.0       48,224.0       288,294.9      329,710.5
+   62341 SUN01APR12 10:30      9pmt4mjdd45kf  889321964     0     0    1,430,000.0       46,963.0       47,399.0       300,386.4      342,975.4
+   62342 SUN01APR12 11:00      9pmt4mjdd45kf  889321964     0     0    1,435,000.0       47,664.0       48,242.0       301,707.6      344,324.2
+   62343 SUN01APR12 11:31      9pmt4mjdd45kf  889321964     0     0    1,435,000.0       47,183.0       47,694.0       295,033.1      337,440.1
+   62344 SUN01APR12 12:00      9pmt4mjdd45kf  889321964     0     0      500,000.0      579,064.0      975,332.0     1,133,482.4    1,177,441.5
+   62345 SUN01APR12 12:30      9pmt4mjdd45kf  889321964     0     0             .0      770,556.0    1,312,529.0     1,464,174.4    1,503,476.4
+   62346 SUN01APR12 13:00      9pmt4mjdd45kf  889321964     0     0             .0    1,028,835.0    1,764,134.0     1,904,275.5    1,956,513.5
+   62347 SUN01APR12 13:30      9pmt4mjdd45kf  889321964     0     0             .0      913,813.0    1,554,556.0     1,751,613.6    1,799,951.2
+   62348 SUN01APR12 14:00      9pmt4mjdd45kf  889321964     0     0             .0    1,054,190.0    1,771,258.0     1,706,625.3    1,755,078.4
+   62349 SUN01APR12 14:30      9pmt4mjdd45kf  889321964     0     0        5,000.0    1,059,170.0    1,718,840.0     1,713,551.0    1,757,988.0
+   62350 SUN01APR12 15:00      9pmt4mjdd45kf  889321964     0     0             .0    1,237,322.0    2,053,564.0     1,670,854.8    1,721,504.3
+   62351 SUN01APR12 15:30      9pmt4mjdd45kf  889321964     0     0        2,506.0    1,282,094.0    2,157,651.0     1,785,117.3    1,839,316.3
+   62352 SUN01APR12 16:00      9pmt4mjdd45kf  889321964     4     1       64,147.0        2,098.8        2,114.5        13,063.1       14,860.4
+...
+   62511 WED04APR12 23:30      9pmt4mjdd45kf  889321964     1     0    5,735,001.0      186,882.0      187,995.0       985,765.7    1,157,203.2
+   62512 THU05APR12 00:00      9pmt4mjdd45kf  889321964     0     0    5,725,000.0      189,110.0      190,214.0     1,113,030.7    1,289,552.2
+   62513 THU05APR12 00:30      9pmt4mjdd45kf  889321964     0     0    5,575,000.0      185,650.0      186,728.0     1,135,509.2    1,309,190.1
+   62514 THU05APR12 01:00      9pmt4mjdd45kf  889321964     0     0    5,665,000.0      187,538.0      188,632.0     1,115,872.6    1,294,565.1
+   62515 THU05APR12 01:30      9pmt4mjdd45kf  889321964     0     1    1,310,862.0       44,011.0       44,263.0       282,583.7      324,499.1
+
+
+Points to bear in mind
+- the query started at 03:35 on 01APR12 and failed with Snapshot too old at 15:37
+- it was run again on 4th April and completed within 2.5 hours
+- this is 11.1.0.7 on HP-UX
+
+I have a bunch of questions about this view below for anyone kind enough to tackle them, but my general question here is how to interpret what happened around midday? It looks like the LIOs/PIOs suddenly climbed and the rows just stopped being fetched. Does this look like a familiar pattern to anyone? The 'good' run a few days later looks totally different. 
+
+Generic questions about DBA_HIST_SQLSTAT - and for the record, there is some valuable insight in MOS doc How To Interpret DBA_HIST_SQLSTAT [ID 471053.1]:
+
+- I assume it doesn't matter we don't see a 'start' execution event? This likely just means the query wasn't in the top 30 when the AWR snap was taken?
+- I assume there is no way to tell how many seperate sessions are running this sql_id? In this case I know there was a single long-running instance but otherwise this could be a problem.
+- Without knowledge of the calling binary or session is there any way to tell if the query completed? I understand from the MOS doc that for a query the end-of=fetch count will be incremented, but what if the query was not in top 30 when the AWR snap happened? Would that counter still b eincremented?
+
+Very grateful for any insights...
+cam

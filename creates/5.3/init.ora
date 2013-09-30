@@ -1,0 +1,208 @@
+#
+# ====================== IMPORTANT ================================
+#
+# THIS SCRIPT MUST BE REVIEWED AND TAILORED FOR SITE USE
+#
+# The db_name is the database identifier
+db_name=GENEVA
+
+# instance_name is normally the same as the SID for non-RAC installations
+instance_name=GENEVA
+
+# When using Oracle Net multiple services names may be specified to
+# identify the instance. A single service name is used in this example
+service_names=GENEVA
+
+# Normally, the two control files should be placed on separate disks.
+# Control files are always real operating system files, not raw disk.
+# The control files store the state of the Oracle instance, for
+# example timestamps, locations of database and log files (for
+# checking), current (redo) log sequence number and checkpoint
+# information.
+control_files=("/Disk1/GENEVA/control01.ctl",
+"/Disk2/GENEVA/control02.ctl",
+"/Disk3/GENEVA/control03.ctl")
+
+# The directory for debugging trace files for background processes
+# (such as the database writer) and the ALERT file.
+background_dump_dest = /ora01/oracle/admin/GENEVA/bdump
+
+# Directory for core dumps from Oracle shared processes which crash.
+core_dump_dest=/ora01/oracle/admin/GENEVA/cdump
+
+# Directory for trace files from Oracle per-session processes.
+user_dump_dest=/ora01/oracle/admin/GENEVA/udump
+
+# Location where UTL_FILE package can write diagnostic files
+utl_file_dir=/tmp
+
+# The instance will utilize automatic undo management, if
+# undo_management=MANUAL then external rollback segments are used.
+undo_management=AUTO
+
+# Time in seconds that undo data will be retained. Use of this
+# parameter will be governed by the size of the undo tablespace.
+undo_retention=1800
+
+# Name of the tablespace to be used for undo data. This parameter
+# should be removed if the database is run in manual undo management
+# mode.
+undo_tablespace=UNDOTBS1
+
+# Specifies a target time for database recovery after a crash.
+fast_start_mttr_target=300
+
+# Specifies the number of processes that are involved in instance
+# crash recovery.
+recovery_parallelism=32
+
+# The maximum number of datafiles this instance of Oracle can have
+# open. Same as max_datafiles parameter in create database script.
+db_files=200
+
+# This is the maximum number of concurrent Oracle processes that can
+# be connected to Oracle. These include _all_ Oracle processes, the
+# background processes as well as the user processes. It is
+# effectively an indirect limit on the number of concurrently connected
+# users and must be set accordingly.
+processes=255
+
+# The number of tables modified in transactions by all users. For
+# example, if 8 users modify data in 3 tables, then the value would be
+# 24. If 8 users modify data in 2 tables, the value would be 16. Note
+# that the bill generator performs dml on over 40 tables. The update
+# Account_Num feature may modify up to 100 tables. Partitioning of
+# tables will increase the number of locks required.
+dml_locks=500
+
+# Geneva relies on the Cost Based Optimizer.
+optimizer_mode=CHOOSE
+
+# Assume that indexed data will be cached 90% of the time.
+optimizer_index_caching=90
+
+# Assume that physically retrieving index data takes 15% of the time.
+# of a full table scan.
+optimizer_index_cost_adj=15
+
+# Limit on the trace file size in operating system blocks.
+max_dump_file_size=UNLIMITED
+
+# The maximum number of concurrent queries which may be in progress by
+# one Oracle session.
+open_cursors=300
+
+# The server will operate in a manner that guarantees compatibility
+# with the version of Oracle given by this parameter. This will not
+# operate across major releases.
+compatible=9.2.0.0.0
+
+# Set this parameter if you want auditing
+# audit_trail=true
+
+# Timed statistics are a valuable performance monitoring tool, and have
+# little impact on overall system performance. Once the whole system
+# is tuned then a very small improvement may be seen by disabling them.
+timed_statistics=true
+
+# Transaction auditing only needed for log analysis tools. Can create
+# unnecessary I/O.
+transaction_auditing=FALSE
+
+###########################
+# Archiving config
+###########################
+# The directory in which the archive copies of the online redo logs
+# are placed. For high throughput systems this must be a big area and
+# copied away to tape frequently as the files will grow quickly. Do
+# not use a raw disk device.
+log_archive_dest='/Disk4/GENEVA/archive'
+
+# For Enterprise Edition users, this parameter has been
+# deprecated in favor of the log_archive_dest_n parameters.
+# log_archive_dest_1='LOCATION=/Disk4/GENEVA/archive'
+# Start the archiver process
+log_archive_start=true
+
+# Format of archive file names
+# log_archive_format=%t_%s.dbf
+
+###########################
+# Memory config
+###########################
+# The physical database block transfer size. Geneva recommend 8KB AS
+# LONG AS THE HARDWARE SUPPORTS THIS IN A SINGLE TRANSFER. Otherwise
+# use the largest hardware supported size.
+db_block_size=8192
+
+# Specifies the size of the default buffer pool for buffers with the
+# same block size as defined by db_block_buffers.
+db_cache_size=1000M
+
+# Memory area for Oracle internal working, contains SQL and PL/SQL in
+# text and parsed form, execution plans and data dictionary cache.
+# Need large numbers for large number of interactive users as this is
+# shared scratch space for the user threads. If the area is too small
+# SQL will need to be reloaded/reparsed.
+shared_pool_size=200M
+
+# This parameter specifies the size (in bytes) of the Java pool, from which
+# the Java memory manager allocates most Java state during runtimeexecution.
+java_pool_size=150M
+
+# This parameter replaces sort_area_size in Oracle 9i. It is a
+# threshold amount of memory that Oracle will divide between all
+# connected processes. Individual workareas will by dynamically
+# sized, so that memory intensive processes are less likely to be
+# moved to disk.
+pga_aggregate_target=500M
+
+# The size of the buffer of blocks to be written to the redo logs (in
+# bytes). Must be a multiple of the db_block_size and should be more
+# than 20 blocks for Geneva.
+# Careful tuning is required. If it is too small, then performance will
+# be impacted due to shortage of space leading to log buffer waits.
+# If the log_buffer is too large, a lot of time can be spent on log
+# file sync. Geneva can generate a high rate of redo log activity.
+log_buffer=2097152
+
+###########################
+# I/O tuning
+###########################
+# This is the maximum time interval between checkpoints in seconds.
+# (A check point allows recovery to start from that point but
+# costs a lot of I/O to do.) Therefore do not do this very often.
+# Oracle will checkpoint on a log file switch anyway, so for maximum performance
+# just rely on that.
+log_checkpoint_timeout=86400
+
+# The number of blocks which will be requested in one go in straight-
+# pass elements of queries. Can reduce the number of I/O operations
+# required to read data. Note that this should be not more than
+# half the stripe size (number of blocks before moving to the next
+# disk).
+db_file_multiblock_read_count=4
+
+# See your operating system documentation for configuring asynchronous
+# I/O. This is strongly recommended for performance.
+disk_asynch_io=true
+
+# Number of simultaneous DBWR processes, 4 is suitable for large
+# (e.g. >= 32 CPU) systems. Tune appropriately, if there are db file
+# write waits, or free buffer waits, and disks are not busy, consider
+# increasing this parameter.
+db_writer_processes=1
+
+###########################
+# Latch tuning
+###########################
+# Improves performance at the cost of space in the shared pool and
+# client SQL areas. Keeps shared SQL pinned, and prevents SQL being
+# aged out, thus removed requirement for reparsing SQL that hasn't
+# been used recently. Also doesn't deallocate cursor space for clients
+# after a cursor is closed.
+cursor_space_for_time=TRUE
+
+# Number of session cursors to cache, reduces contention on the library
+# cache latch.
+session_cached_cursors=40

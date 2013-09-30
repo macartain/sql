@@ -1,0 +1,23 @@
+-- -----------------------------------------------------------------------------
+-- package specification
+-- -----------------------------------------------------------------------------
+create or replace package cvg_cam_util as
+
+	function getVersion return VARCHAR2;
+
+end cvg_cam_util;
+/
+
+-- -----------------------------------------------------------------------------
+-- package body
+-- -----------------------------------------------------------------------------
+create or replace package body cvg_cam_util as   
+   
+function getVersion RETURN VARCHAR2 IS
+	version_text VARCHAR2(55) := 'v1.1-09NOV2011-colm-wrapped';
+begin
+	RETURN version_text;
+end getVersion;
+
+end cvg_cam_util;
+/

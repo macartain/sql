@@ -1,0 +1,148 @@
+-- Create User for counts
+
+create user RBM_AUDIT identified by RBM_AUDIT
+default tablespace USERS
+temporary tablespace TEMP
+quota unlimited on USERS;
+
+grant connect to RBM_AUDIT;
+grant create session to RBM_AUDIT;
+grant DBA to RBM_AUDIT;
+
+
+-- Create table
+create table RBM_AUDIT.MIGRATIONCOUNT
+(
+ AUDIT_ID NUMBER(9) not null,
+ OWNER VARCHAR(255) not null,
+ TABLE_NAME VARCHAR2(255) not null,
+ RECORD_COUNT NUMBER(18),
+ AUDIT_DTM DATE not null
+)
+tablespace USERS
+ pctfree 10
+ initrans 1
+ maxtrans 255
+ storage
+ (
+ initial 64K
+next 64K
+ minextents 1
+ maxextents unlimited
+ pctincrease 0
+ );
+
+-- Create/Recreate primary, unique and foreign key constraints 
+
+alter table RBM_AUDIT.MIGRATIONCOUNT
+add constraint MIGRATIONCOUNT_PK primary key (AUDIT_ID, OWNER, TABLE_NAME)
+using index 
+tablespace USERS
+pctfree 10
+initrans 2
+maxtrans 255
+storage
+(
+ initial 64K
+ next 64K
+ minextents 1
+ maxextents unlimited
+ pctincrease 0
+ );
+
+
+--Count of Tables
+------------------------------------------------------------
+declare
+
+--
+
+--  Anonymous pl/sql code to count rows in tables of interest
+
+--
+
+--  basic logic
+
+--    create list of target tables (cursor)
+
+--    while more tables in list
+
+--      dynamically generate select count
+
+--      store output in table
+
+-- ---------------------------------------------------------------------
+
+--
+
+-- 20110904   Andy Gill   Skeleton for capturing table counts
+
+--
+
+v_ct       number        := 0 ;
+
+v_sqlcode  number        := 0 ;
+
+v_stmt     varchar2(255)      ;
+
+--
+
+--         modify cursor select for tables of interest, order by.
+
+--
+
+  cursor c_tbl is
+
+ 
+
+    select owner, table_name
+
+       from   all_tables
+
+       where  owner in ('GENEVA_ADMIN')
+
+       and table_name not like '%QUEUE%'
+
+       and table_name not like 'AQ$%'
+
+       and table_name not like 'SYS_IOT%';
+
+--   
+
+r_tbl      c_tbl%rowtype;
+
+--
+
+begin
+
+open c_tbl;
+
+  loop
+
+    fetch c_tbl into r_tbl;
+
+    exit when c_tbl%notfound;
+
+    v_stmt := 'select /*+ PARALLEL('||r_tbl.table_name||',DEFAULT) */ count (*) from '||r_tbl.owner||'.'||r_tbl.table_name;
+
+    execute immediate v_stmt into v_ct;
+
+    v_sqlcode := SQLCODE;
+
+    
+
+    if v_sqlcode = 0  
+
+    then
+
+       insert into RBM_AUDIT.MIGRATIONCOUNT(AUDIT_ID,OWNER,TABLE_NAME,RECORD_COUNT,AUDIT_DTM) values (1,r_tbl.owner,r_tbl.table_name,v_ct,sysdate);
+
+    end if;
+
+  end loop;
+
+close c_tbl;
+
+end;
+
+

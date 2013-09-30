@@ -1,0 +1,380 @@
+
+User created.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Creating CREATEROLE procedure...
+SYS@VOD11G1> 
+SYS@VOD11G1> -- If theRole already exists then do nothing.
+SYS@VOD11G1> -- Otherwise create the role with no privileges
+SYS@VOD11G1> 
+SYS@VOD11G1> create or replace procedure createRole (theRole varchar2)
+  2  as
+  3  	 e_role_name_conflicts exception;
+  4  	 pragma exception_init(e_role_name_conflicts, -1921);
+  5  begin
+  6  	 execute immediate 'create role ' || theRole;
+  7  exception
+  8  	 when e_role_name_conflicts
+  9  	     then null;
+ 10  end createRole;
+ 11  /
+
+Procedure created.
+
+SYS@VOD11G1> show errors procedure createrole
+No errors.
+SYS@VOD11G1> 
+SYS@VOD11G1> -- Create each of the Geneva roles
+SYS@VOD11G1> 
+SYS@VOD11G1> set termout on
+SYS@VOD11G1> 
+SYS@VOD11G1> execute createRole ('GENEVAADMIN');
+
+PL/SQL procedure successfully completed.
+
+SYS@VOD11G1> execute createRole ('GENEVAAPP');
+
+PL/SQL procedure successfully completed.
+
+SYS@VOD11G1> execute createRole ('GENEVABATCH');
+
+PL/SQL procedure successfully completed.
+
+SYS@VOD11G1> execute createRole ('GENEVAPUBLIC');
+
+PL/SQL procedure successfully completed.
+
+SYS@VOD11G1> execute createRole ('GENEVASECURITY');
+
+PL/SQL procedure successfully completed.
+
+SYS@VOD11G1> execute createRole ('GENEVAVERSION');
+
+PL/SQL procedure successfully completed.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> commit;
+
+Commit complete.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> -- ********************************************************
+SYS@VOD11G1> -- End of createrole.sql
+SYS@VOD11G1> -- ********************************************************
+SYS@VOD11G1> @roleprivs.sql
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> -- File: roleprivs.sql
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Script to grant specific privileges to Geneva Schema Owner user.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- THIS SCRIPT MUST BE RUN AS USER "SYS", or a suitably
+SYS@VOD11G1> -- privileged user, to explicitly grant privileges to the
+SYS@VOD11G1> -- schema owner user. This is because Oracle does not use
+SYS@VOD11G1> -- privileges from granted roles within stored procedures.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Version: @(#) (%full_filespec: roleprivs.sql-13:sql:CB1#1 %)
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Copyright (c) Convergys, 2002
+SYS@VOD11G1> -- Convergys refers to Convergys Corporation or any of its wholly owned
+SYS@VOD11G1> -- subsidiaries.
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> 
+SYS@VOD11G1> @@sysprivs.sql GENEVA_ADMIN
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> -- File: sysprivs.sql
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Script to grant specific required privileges to Geneva or
+SYS@VOD11G1> -- Event schema owner users.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- THIS SCRIPT MUST BE RUN AS USER "SYS", or a suitably
+SYS@VOD11G1> -- privileged user, to explicitly grant privileges to the
+SYS@VOD11G1> -- schema owner user. This is because Oracle does not use
+SYS@VOD11G1> -- privileges from granted roles within stored procedures.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- This script should be run with a single parameter giving the
+SYS@VOD11G1> -- user to whom the privileges are to be granted.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Version: @(#) (%full_filespec: sysprivs.sql-5:sql:CB1#1 %)
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Copyright (c) Convergys, 2004
+SYS@VOD11G1> -- Convergys refers to Convergys Corporation or any of its wholly owned
+SYS@VOD11G1> -- subsidiaries.
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> 
+SYS@VOD11G1> define gUser = &&1
+SYS@VOD11G1> set verify off
+SYS@VOD11G1> 
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> prompt Granting privileges to &&gUser user...
+Granting privileges to GENEVA_ADMIN user...
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> 
+SYS@VOD11G1> grant select on sys.dba_roles	 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_role_privs  to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_tab_privs	 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_profiles	 to &&gUser with grant option;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_USERS	 to &&gUser with grant option;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_TABLESPACES to &&gUser with grant option;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> grant alter session		 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant grant any roles		 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant create role			 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant create sequence		 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> grant execute on DBMS_ALERT	 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant execute on DBMS_PIPE 	 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> prompt *************************************************
+*************************************************
+SYS@VOD11G1> prompt Granting privileges on Advanced Queuing packages.
+Granting privileges on Advanced Queuing packages.
+SYS@VOD11G1> prompt *************************************************
+*************************************************
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> prompt NOTE:
+NOTE:
+SYS@VOD11G1> prompt If there are other users on this database instance with active queues,
+If there are other users on this database instance with active queues,
+SYS@VOD11G1> prompt it may fail with a timeout waiting for a lock (Oracle error 04021).
+it may fail with a timeout waiting for a lock (Oracle error 04021).
+SYS@VOD11G1> prompt This is due to Oracle locking the package during message propagation.
+This is due to Oracle locking the package during message propagation.
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> prompt A workaround is to temporarily disable queues with the following:
+A workaround is to temporarily disable queues with the following:
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> prompt   alter system set job_queue_processes=0 scope=memory;
+alter system set job_queue_processes=0 scope=memory
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> prompt Ensure that the parameter is reset to a suitable value after this
+Ensure that the parameter is reset to a suitable value after this
+SYS@VOD11G1> prompt script completes, or queue message propagation and job execution will
+script completes, or queue message propagation and job execution will
+SYS@VOD11G1> prompt not operate.
+not operate.
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> 
+SYS@VOD11G1> grant execute on dbms_aq		 to &&gUser with grant option;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant execute on dbms_aqadm	 to &&gUser;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> prompt Finished granting privileges.
+Finished granting privileges.
+SYS@VOD11G1> prompt
+
+SYS@VOD11G1> 
+SYS@VOD11G1> CREATE USER GENEVAADMINUSER  PROFILE DEFAULT
+  2  	 IDENTIFIED BY genevauser DEFAULT TABLESPACE DATA
+  3  	 TEMPORARY TABLESPACE TEMP
+  4  	 ACCOUNT UNLOCK;
+
+User created.
+
+SYS@VOD11G1> GRANT CONNECT TO GENEVAADMINUSER;
+
+Grant succeeded.
+
+SYS@VOD11G1> GRANT GENEVAADMIN TO  GENEVAADMINUSER;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> CREATE USER SECURITY PROFILE DEFAULT
+  2  	 IDENTIFIED BY genevauser DEFAULT TABLESPACE DATA
+  3  	 TEMPORARY TABLESPACE TEMP
+  4  	 ACCOUNT UNLOCK;
+
+User created.
+
+SYS@VOD11G1> GRANT CONNECT TO SECURITY;
+
+Grant succeeded.
+
+SYS@VOD11G1> GRANT GENEVASECURITY TO SECURITY;
+
+Grant succeeded.
+
+SYS@VOD11G1> @securityrole.sql
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> -- File: securityrole.sql
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Script to grant specific privileges to	GENEVASECURITY role.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- THIS SCRIPT MUST BE RUN, AFTER THE SECURITY USER HAS BEEN CREATED
+SYS@VOD11G1> -- (i.e. AFTER SUCCESSFUL COMPLETION OF MIGRATION/INSTALLATION), AND
+SYS@VOD11G1> --  AS USER "SYS" TO EXPLICITLY GRANT PRIVILEGES TO "GENEVASECURITY &
+SYS@VOD11G1> --  GENEVAAPP ROLES". THIS IS TO OVERCOME THE ORACLE 'FEATURE' WHEREBY
+SYS@VOD11G1> -- CERTAIN PRIVILEGES OBTAINED THROUGH GRANTED ROLES (SUCH AS DBA)
+SYS@VOD11G1> -- ARE NOT RECOGNISED WITHIN STORED PROCEDURES.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Version: @(#) (%full_filespec: securityrole.sql-2:sql:1 %)
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Copyright (c) Geneva Technology 2000
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> prompt Granting DBA views to GENEVAAPP...
+Granting DBA views to GENEVAAPP...
+SYS@VOD11G1> -- ======================================================================
+SYS@VOD11G1> -- Needs to be done before granting GENEVAAPP role to GENEVASECURITY ROLE
+SYS@VOD11G1> -- ======================================================================
+SYS@VOD11G1> grant select on sys.dba_profiles to GENEVAAPP;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_USERS to GENEVAAPP;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_TABLESPACES to GENEVAAPP;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant select on sys.dba_ROLE_PRIVS to GENEVAAPP;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> prompt GENEVASECURITY...
+GENEVASECURITY...
+SYS@VOD11G1> grant create SESSION to GENEVASECURITY with admin option;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant create USER to GENEVASECURITY;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant alter USER to GENEVASECURITY;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant drop USER to GENEVASECURITY;
+
+Grant succeeded.
+
+SYS@VOD11G1> @securityprivs.sql
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> -- File: securityprivs.sql
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Script to grant GENEVASECURITY role to the SECURITY user.
+SYS@VOD11G1> --
+SYS@VOD11G1> -- THIS SCRIPT MUST BE RUN, AFTER THE SECURITY USER HAS BEEN CREATED
+SYS@VOD11G1> -- (i.e. AFTER SUCCESSFUL COMPLETION OF MIGRATION/INSTALLATION), AND
+SYS@VOD11G1> --  AS USER "SYS".
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Version: @(#) (%full_filespec: securityprivs.sql-3:sql:1 %)
+SYS@VOD11G1> --
+SYS@VOD11G1> -- Copyright (c) Geneva Technology 2000
+SYS@VOD11G1> -- *********************************************************
+SYS@VOD11G1> grant GENEVASECURITY to SECURITY with admin option;
+
+Grant succeeded.
+
+SYS@VOD11G1> grant GENEVAAPP to SECURITY with admin option;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> CREATE USER GENEVABATCHUSER PROFILE DEFAULT
+  2  	 IDENTIFIED BY GENEVABATCHUSER DEFAULT TABLESPACE DATA
+  3  	 TEMPORARY TABLESPACE TEMP
+  4  	 ACCOUNT UNLOCK;
+
+User created.
+
+SYS@VOD11G1> GRANT CONNECT TO GENEVABATCHUSER;
+
+Grant succeeded.
+
+SYS@VOD11G1> GRANT GENEVABATCH TO GENEVABATCHUSER;
+
+Grant succeeded.
+
+SYS@VOD11G1> 
+SYS@VOD11G1> connect GENEVA_ADMIN/GENEVA_ADMIN
+Connected.
+
+VALUE                                                                                                                                                                                                   
+----------------------------------------                                                                                                                                                                
+GENEVA_ADMIN@VOD11G1                                                                                                                                                                                    
+
+GENEVA_ADMIN@VOD11G1> rem @/Disk1/app/geneva/product/geneva-5.1.23.t9i2/schema/install/migrationprocess.sql
+GENEVA_ADMIN@VOD11G1> rem @/Disk1/app/geneva/product/geneva-5.1.23.t9i2/schema/install/gnvschema.spc
+GENEVA_ADMIN@VOD11G1> rem @/Disk1/app/geneva/product/geneva-5.1.23.t9i2/schema/install/gnvschema.plb
+GENEVA_ADMIN@VOD11G1> 
+GENEVA_ADMIN@VOD11G1> spool off
